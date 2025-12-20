@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Video;
 
@@ -11,93 +11,63 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private GameObject menuCanvas;
     [SerializeField] private GameObject videoPanel;
 
+    [Header("Settings")]
     [SerializeField] private GameObject settingsPanel;
-    [SerializeField] private GameObject creditsPanel;
 
-    [Header("Quit Video")]
-    [SerializeField] private VideoPlayer quitVideo;
+    [Header("Play Video")]
+    [SerializeField] private VideoPlayer playVideo;
 
-    private bool isQuitting = false;
+    private bool isPlaying = false;
 
     private void Start()
     {
-        if (quitVideo != null)
-        {
-            quitVideo.Prepare();
-        }
+        if (playVideo != null)
+            playVideo.Prepare();
     }
 
+    // ================= PLAY GAME =================
     public void PlayGame()
     {
-        if (string.IsNullOrEmpty(gameSceneName))
-        {
-            Debug.LogError("Game scene name is not set!");
-            return;
-        }
-
-        SceneManager.LoadScene(gameSceneName);
-    }
-
-    public void QuitGame()
-    {
-        if (isQuitting) return;
-
-        if (quitVideo == null)
-        {
-            QuitApplication();
-            return;
-        }
-
-        isQuitting = true;
+        if (isPlaying) return;
+        isPlaying = true;
 
         menuCanvas.SetActive(false);
         videoPanel.SetActive(true);
 
-        quitVideo.loopPointReached += OnQuitVideoFinished;
+        playVideo.loopPointReached += OnPlayVideoFinished;
 
-        if (quitVideo.isPrepared)
-        {
-            quitVideo.Play();
-        }
+        if (playVideo.isPrepared)
+            playVideo.Play();
         else
         {
-            quitVideo.prepareCompleted += OnVideoPrepared;
-            quitVideo.Prepare();
+            playVideo.prepareCompleted += OnPlayVideoPrepared;
+            playVideo.Prepare();
         }
     }
 
-    private void OnVideoPrepared(VideoPlayer vp)
+    private void OnPlayVideoPrepared(VideoPlayer vp)
     {
-        quitVideo.prepareCompleted -= OnVideoPrepared;
-        quitVideo.Play();
+        playVideo.prepareCompleted -= OnPlayVideoPrepared;
+        playVideo.Play();
     }
 
-    private void OnQuitVideoFinished(VideoPlayer vp)
+    private void OnPlayVideoFinished(VideoPlayer vp)
     {
-        quitVideo.loopPointReached -= OnQuitVideoFinished;
-        QuitApplication();
+        playVideo.loopPointReached -= OnPlayVideoFinished;
+        SceneManager.LoadScene(gameSceneName);
     }
 
-    private void QuitApplication()
+    // ================= QUIT GAME =================
+    public void QuitGame()
     {
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-            Application.Quit();
+        Application.Quit();
 #endif
     }
 
-    private void OnDestroy()
-    {
-        if (quitVideo != null)
-        {
-            quitVideo.loopPointReached -= OnQuitVideoFinished;
-            quitVideo.prepareCompleted -= OnVideoPrepared;
-        }
-    }
-
+    // ================= SETTINGS =================
     public void OpenSetPanel() => settingsPanel?.SetActive(true);
     public void CloseSetPanel() => settingsPanel?.SetActive(false);
-    public void OpenCreditsPanel() => creditsPanel?.SetActive(true);
-    public void CloseCreditsPanel() => creditsPanel?.SetActive(false);
 }
