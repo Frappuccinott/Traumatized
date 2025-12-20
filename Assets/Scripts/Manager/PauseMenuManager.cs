@@ -38,8 +38,14 @@ public class PauseMenu : MonoBehaviour
     {
         pausePanel?.SetActive(false);
         settingsPanel?.SetActive(false);
-        SetPauseState(false);
+
+        // Cursor her zaman görünür olacak
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        SetPauseState(false); // Game zamanını normal bırak
     }
+
 
     private void OnPausePressed(InputAction.CallbackContext context)
     {

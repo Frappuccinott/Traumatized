@@ -1,12 +1,15 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Level yönetimi - Sahne geçiþleri, cutscene oynatma ve restart
+/// Singleton pattern ile global eriþim
+/// </summary>
 public class LevelManager : MonoBehaviour
 {
     public static LevelManager Instance { get; private set; }
 
     [Header("Level Settings")]
-    [SerializeField] private string currentLevelName;
     [SerializeField] private string nextLevelName;
 
     [Header("Cutscene Settings")]
@@ -17,7 +20,7 @@ public class LevelManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -27,18 +30,24 @@ public class LevelManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (Instance == this) Instance = null;
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
+    /// <summary>
+    /// QTE baþarýlý - Success cutscene oynat ve devam et
+    /// </summary>
     public void OnQTESuccess()
     {
         if (isTransitioning) return;
+
         isTransitioning = true;
 
-        // Success cutscene oynat
         if (successCutscene != null)
         {
-            successCutscene.PlayCutscene(() => OnSuccessCutsceneEnd());
+            successCutscene.PlayCutscene(OnSuccessCutsceneEnd);
         }
         else
         {
@@ -46,19 +55,22 @@ public class LevelManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// QTE baþarýsýz - Fail cutscene oynat ve restart
+    /// </summary>
     public void OnQTEFail()
     {
         if (isTransitioning) return;
+
         isTransitioning = true;
 
-        // Fail cutscene oynat
         if (failCutscene != null)
         {
-            failCutscene.PlayCutscene(() => OnFailCutsceneEnd());
+            failCutscene.PlayCutscene(RestartLevel);
         }
         else
         {
-            OnFailCutsceneEnd();
+            RestartLevel();
         }
     }
 
@@ -66,35 +78,27 @@ public class LevelManager : MonoBehaviour
     {
         // Oyuncu kontrolü geri ver
         PlayerController player = FindFirstObjectByType<PlayerController>();
-        if (player != null)
-        {
-            player.EnableMovement();
-        }
+        player?.EnableMovement();
 
         isTransitioning = false;
-
-        // Level geçiþi manuel olacak (LevelTransition trigger ile)
     }
 
-    private void OnFailCutsceneEnd()
-    {
-        // Sahneyi yeniden baþlat
-        RestartLevel();
-    }
-
+    /// <summary>
+    /// Mevcut sahneyi yeniden yükle
+    /// </summary>
     public void RestartLevel()
     {
-        // Player inventory temizle
+        // Inventory temizle
         PlayerInteraction playerInteraction = FindFirstObjectByType<PlayerInteraction>();
-        if (playerInteraction != null)
-        {
-            playerInteraction.ClearItems();
-        }
+        playerInteraction?.ClearInventory();
 
         // Sahneyi yeniden yükle
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
+    /// <summary>
+    /// Bir sonraki level'a geç
+    /// </summary>
     public void LoadNextLevel()
     {
         if (!string.IsNullOrEmpty(nextLevelName))
@@ -103,7 +107,7 @@ public class LevelManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Next level name is not set!");
+            Debug.LogWarning("LevelManager: Next level name is not set!");
         }
     }
-}
+}   

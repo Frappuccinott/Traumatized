@@ -1,81 +1,35 @@
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 
+/// <summary>
+/// Item outline efekti - Scale ile büyütme
+/// </summary>
 public class ItemOutline : MonoBehaviour
 {
     [Header("Outline Settings")]
-    [SerializeField] private Color outlineColor = Color.yellow;
-    [SerializeField] private float outlineWidth = 0.1f;
-    [SerializeField] private bool animateOutline = true;
-    [SerializeField] private float pulseSpeed = 2f;
-    [SerializeField] private float minWidth = 0.05f;
-    [SerializeField] private float maxWidth = 0.15f;
+    [SerializeField] private float scaleMultiplier = 1.1f;
+    [SerializeField] private float animationSpeed = 5f;
 
-    private Renderer[] renderers;
-    private MaterialPropertyBlock propertyBlock;
-    private bool isOutlineActive = false;
-    private float animationTime = 0f;
-
-    private static readonly int OutlineColorProperty = Shader.PropertyToID("_OutlineColor");
-    private static readonly int OutlineWidthProperty = Shader.PropertyToID("_OutlineWidth");
+    private Vector3 originalScale;
+    private Vector3 targetScale;
+    private bool isHighlighted = false;
 
     private void Awake()
     {
-        renderers = GetComponentsInChildren<Renderer>();
-        propertyBlock = new MaterialPropertyBlock();
-
-        // Baþlangýçta outline kapalý
-        SetOutline(false);
+        originalScale = transform.localScale;
+        targetScale = originalScale;
     }
 
     private void Update()
     {
-        if (isOutlineActive && animateOutline)
-        {
-            animationTime += Time.deltaTime * pulseSpeed;
-            float width = Mathf.Lerp(minWidth, maxWidth, (Mathf.Sin(animationTime) + 1f) / 2f);
-            UpdateOutlineWidth(width);
-        }
+        // Smooth scale geçiþi
+        transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * animationSpeed);
     }
 
     public void SetOutline(bool active)
     {
-        isOutlineActive = active;
-
-        if (active)
-        {
-            animationTime = 0f;
-            UpdateOutline(outlineColor, outlineWidth);
-        }
-        else
-        {
-            UpdateOutline(Color.clear, 0f);
-        }
-    }
-
-    private void UpdateOutline(Color color, float width)
-    {
-        foreach (Renderer renderer in renderers)
-        {
-            if (renderer != null)
-            {
-                renderer.GetPropertyBlock(propertyBlock);
-                propertyBlock.SetColor(OutlineColorProperty, color);
-                propertyBlock.SetFloat(OutlineWidthProperty, width);
-                renderer.SetPropertyBlock(propertyBlock);
-            }
-        }
-    }
-
-    private void UpdateOutlineWidth(float width)
-    {
-        foreach (Renderer renderer in renderers)
-        {
-            if (renderer != null)
-            {
-                renderer.GetPropertyBlock(propertyBlock);
-                propertyBlock.SetFloat(OutlineWidthProperty, width);
-                renderer.SetPropertyBlock(propertyBlock);
-            }
-        }
+        isHighlighted = active;
+        targetScale = active ? originalScale * scaleMultiplier : originalScale;
     }
 }

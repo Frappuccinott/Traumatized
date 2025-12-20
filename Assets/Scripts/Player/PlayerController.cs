@@ -1,6 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
+/// <summary>
+/// Karakter hareket kontrolü - WASD/Sol Stick ile hareket, Space/A ile zıplama
+/// Character Controller kullanır, 2.5D platformer tarzı hareket
+/// SADECE YATAY HAREKET (Sağ-Sol)
+/// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
@@ -8,6 +13,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private float jumpHeight = 1.5f;
     [SerializeField] private float gravity = -9.81f;
+    [SerializeField] private float rotationSpeed = 10f;
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
@@ -15,17 +21,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask groundMask;
 
     private CharacterController controller;
+    private Camera mainCamera;
     private Vector3 velocity;
     private bool isGrounded;
-
     private PlayerInputActions inputActions;
     private Vector2 moveInput;
 
-    public bool CanMove { get; set; } = true;
+    public bool CanMove { get; private set; } = true;
 
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
+        mainCamera = Camera.main;
         inputActions = new PlayerInputActions();
     }
 
@@ -45,6 +52,18 @@ public class PlayerController : MonoBehaviour
         inputActions.Player.Jump.performed -= OnJump;
     }
 
+    private void Update()
+    {
+        CheckGround();
+
+        if (CanMove)
+        {
+            Move();
+        }
+
+        ApplyGravity();
+    }
+
     private void OnMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
@@ -56,16 +75,6 @@ public class PlayerController : MonoBehaviour
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
-    }
-
-    private void Update()
-    {
-        CheckGround();
-        if (CanMove)
-        {
-            Move();
-        }
-        ApplyGravity();
     }
 
     private void CheckGround()
@@ -80,21 +89,24 @@ public class PlayerController : MonoBehaviour
 
     private void Move()
     {
-        Vector3 cameraForward = Camera.main.transform.forward;
-        Vector3 cameraRight = Camera.main.transform.right;
+        if (mainCamera == null) return;
 
-        cameraForward.y = 0;
-        cameraRight.y = 0;
-        cameraForward.Normalize();
-        cameraRight.Normalize();
+        // SADECE X EKSENİ (Sağ-Sol)
+        // moveInput.x → A/D veya Left Stick yatay
+        Vector3 right = mainCamera.transform.right;
+        right.y = 0;
+        right.Normalize();
 
-        Vector3 moveDirection = cameraForward * moveInput.y + cameraRight * moveInput.x;
+        Vector3 moveDirection = right * moveInput.x;
+
         controller.Move(moveDirection * moveSpeed * Time.deltaTime);
 
-        if (moveDirection.magnitude > 0.1f)
+        // Hareket varsa karakteri o yöne döndür
+        if (Mathf.Abs(moveInput.x) > 0.01f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, 10f * Time.deltaTime);
+            Vector3 lookDirection = moveInput.x > 0 ? right : -right;
+            Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
     }
 
