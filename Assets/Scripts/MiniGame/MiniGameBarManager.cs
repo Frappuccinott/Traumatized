@@ -2,6 +2,9 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Video;
+using UnityEngine.SceneManagement;
+
 
 public class MiniGameBarManager : MonoBehaviour
 {
@@ -20,6 +23,13 @@ public class MiniGameBarManager : MonoBehaviour
     [Header("Audio")]
     [SerializeField] private AudioClip successSound;
     [SerializeField] private AudioClip failSound;
+
+    [Header("Transition Video")]
+    [SerializeField] private GameObject videoPanel;
+    [SerializeField] private VideoPlayer transitionVideo;
+
+    [Header("Next MiniGame")]
+    [SerializeField] private SteadyHandPanel steadyHandPanel;
 
     private InputAction confirmAction;
     private AudioSource audioSource;
@@ -62,9 +72,13 @@ public class MiniGameBarManager : MonoBehaviour
     private void Start()
     {
         miniGamePanel?.SetActive(false);
+        videoPanel?.SetActive(false);
 
         if (barBackground != null)
             barWidth = barBackground.rect.width;
+
+        if (transitionVideo != null)
+            transitionVideo.loopPointReached += OnTransitionVideoFinished;
     }
 
     private void Update()
@@ -75,6 +89,7 @@ public class MiniGameBarManager : MonoBehaviour
         CheckInput();
     }
 
+    // ================= START =================
     public void StartMiniGame(ItemType itemType, Action onSuccess, Action onFail)
     {
         currentItemType = itemType;
@@ -90,7 +105,6 @@ public class MiniGameBarManager : MonoBehaviour
         hasPressedButton = false;
         isGameActive = true;
 
-        // ✅ TAM SOL
         if (slider != null)
             slider.anchoredPosition = new Vector2(0f, slider.anchoredPosition.y);
 
@@ -100,7 +114,7 @@ public class MiniGameBarManager : MonoBehaviour
         confirmAction.Enable();
     }
 
-
+    // ================= BAR LOGIC =================
     private void MoveSlider()
     {
         sliderPosition += sliderSpeed * Time.deltaTime;
@@ -110,16 +124,12 @@ public class MiniGameBarManager : MonoBehaviour
         if (slider != null)
             slider.anchoredPosition = new Vector2(xPos, slider.anchoredPosition.y);
 
-        // ❌ Bar bitti, hiç basılmadıysa
         if (sliderPosition >= barWidth && !hasPressedButton)
         {
-            Debug.Log("<color=red>[MINIGAME FAIL]</color> No input, bar ended");
+            Debug.Log("<color=red>[MINIGAME FAIL]</color> No input");
             OnFail();
         }
     }
-
-
-
 
     private void CheckInput()
     {
@@ -130,14 +140,9 @@ public class MiniGameBarManager : MonoBehaviour
             hasPressedButton = true;
 
             if (IsInGreenZone())
-            {
                 OnSuccess();
-            }
             else
-            {
-                Debug.Log("<color=red>[MINIGAME FAIL]</color> Pressed outside green zone");
                 OnFail();
-            }
         }
     }
 
@@ -148,21 +153,20 @@ public class MiniGameBarManager : MonoBehaviour
         float greenCenterX = greenZone.anchoredPosition.x + barWidth / 2f;
         float greenHalfWidth = greenZone.rect.width / 2f;
 
-        float left = greenCenterX - greenHalfWidth;
-        float right = greenCenterX + greenHalfWidth;
-
-        return sliderPosition >= left && sliderPosition <= right;
+        return sliderPosition >= greenCenterX - greenHalfWidth &&
+               sliderPosition <= greenCenterX + greenHalfWidth;
     }
 
+    // ================= RESULT =================
     private void OnSuccess()
     {
-        Debug.Log($"<color=green>[MINIGAME SUCCESS]</color> Item: {currentItemType}");
+        Debug.Log($"<color=green>[BAR MINIGAME SUCCESS]</color> Item: {currentItemType}");
 
         if (successSound != null)
             audioSource.PlayOneShot(successSound);
 
         EndMiniGame();
-        onSuccessCallback?.Invoke();
+        PlayTransitionVideo();
     }
 
     private void OnFail()
@@ -171,8 +175,12 @@ public class MiniGameBarManager : MonoBehaviour
             audioSource.PlayOneShot(failSound);
 
         EndMiniGame();
-        onFailCallback?.Invoke();
+
+        Debug.Log("<color=red>[BAR MINIGAME FAIL]</color> Reloading scene");
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
+
 
     private void EndMiniGame()
     {
@@ -183,18 +191,43 @@ public class MiniGameBarManager : MonoBehaviour
         player?.EnableMovement();
     }
 
+    // ================= VIDEO =================
+    private void PlayTransitionVideo()
+    {
+        if (transitionVideo == null || videoPanel == null)
+        {
+            Debug.Log("No transition video → SteadyHand starts");
+            steadyHandPanel?.Show();
+            return;
+        }
+
+        videoPanel.SetActive(true);
+        transitionVideo.Stop();
+        transitionVideo.Play();
+    }
+
+    private void OnTransitionVideoFinished(VideoPlayer vp)
+    {
+        videoPanel.SetActive(false);
+
+        Debug.Log("<color=cyan>[TRANSITION VIDEO FINISHED]</color>");
+
+        steadyHandPanel?.Show();
+    }
+
     private void UpdateInstructionText()
     {
         if (instructionText != null)
-        {
             instructionText.text =
                 $"Press X when the line is in the green zone ({currentItemType})!";
-        }
     }
 
     private void OnDestroy()
     {
         if (Instance == this)
             Instance = null;
+
+        if (transitionVideo != null)
+            transitionVideo.loopPointReached -= OnTransitionVideoFinished;
     }
 }

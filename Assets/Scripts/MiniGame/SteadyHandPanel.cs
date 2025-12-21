@@ -1,39 +1,56 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Steady Hand mini game panel yönetimi
+/// Success olunca otomatik kapanır
+/// </summary>
 public class SteadyHandPanel : MonoBehaviour
 {
     [SerializeField] private SteadyHandMiniGame miniGame;
 
-    private void Awake()
-    {
-        gameObject.SetActive(false);
-
-        miniGame.OnSuccess += HandleSuccess;
-        miniGame.OnFail += HandleFail;
-    }
-
-    // 🔹 ŞİMDİ TEST İÇİN BURADAN AÇACAĞIZ
+    /// <summary>
+    /// Panel'i aç ve mini game'i başlat
+    /// </summary>
     public void Show()
     {
         gameObject.SetActive(true);
-        miniGame.StartGame();
+
+        if (miniGame != null)
+        {
+            miniGame.OnSuccess += OnMiniGameSuccess;
+            miniGame.StartGame();
+        }
     }
 
+    /// <summary>
+    /// Panel'i kapat
+    /// </summary>
     public void Hide()
     {
-        miniGame.StopGame();
+        UnsubscribeEvent();
         gameObject.SetActive(false);
     }
 
-    private void HandleSuccess()
+    private void OnMiniGameSuccess()
     {
-        Debug.Log("STEADY HAND: SUCCESS");
         Hide();
     }
 
-    private void HandleFail()
+    private void UnsubscribeEvent()
     {
-        Debug.Log("STEADY HAND: FAIL");
-        Hide();
+        if (miniGame != null)
+        {
+            miniGame.OnSuccess -= OnMiniGameSuccess;
+        }
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeEvent();
+    }
+
+    private void OnDestroy()
+    {
+        UnsubscribeEvent();
     }
 }
