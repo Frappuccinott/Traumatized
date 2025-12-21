@@ -1,9 +1,7 @@
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 /// <summary>
-/// Item outline efekti - Scale ile büyütme
+/// Item outline efekti - Hover olunca scale ile büyütme animasyonu
 /// </summary>
 public class ItemOutline : MonoBehaviour
 {
@@ -13,7 +11,6 @@ public class ItemOutline : MonoBehaviour
 
     private Vector3 originalScale;
     private Vector3 targetScale;
-    private bool isHighlighted = false;
 
     private void Awake()
     {
@@ -23,13 +20,14 @@ public class ItemOutline : MonoBehaviour
 
     private void Update()
     {
-        // Smooth scale geçiþi
         transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * animationSpeed);
     }
 
+    /// <summary>
+    /// InteractableItem ve InteractionPoint tarafýndan çaðrýlýr
+    /// </summary>
     public void SetOutline(bool active)
     {
-        isHighlighted = active;
         targetScale = active ? originalScale * scaleMultiplier : originalScale;
     }
 }

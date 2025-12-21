@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Level yönetimi - Sahne geçiþleri, cutscene oynatma ve restart
+/// Level yönetimi - Sahne geçiþleri ve cutscene oynatma
 /// Singleton pattern ile global eriþim
 /// </summary>
 public class LevelManager : MonoBehaviour
@@ -16,9 +16,14 @@ public class LevelManager : MonoBehaviour
     [SerializeField] private CutscenePlayer successCutscene;
     [SerializeField] private CutscenePlayer failCutscene;
 
-    private bool isTransitioning = false;
+    private bool isTransitioning;
 
     private void Awake()
+    {
+        InitializeSingleton();
+    }
+
+    private void InitializeSingleton()
     {
         if (Instance != null && Instance != this)
         {
@@ -28,16 +33,8 @@ public class LevelManager : MonoBehaviour
         Instance = this;
     }
 
-    private void OnDestroy()
-    {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
-    }
-
     /// <summary>
-    /// QTE baþarýlý - Success cutscene oynat ve devam et
+    /// Mini game baþarýlý - Success cutscene oynat
     /// </summary>
     public void OnQTESuccess()
     {
@@ -56,7 +53,7 @@ public class LevelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// QTE baþarýsýz - Fail cutscene oynat ve restart
+    /// Mini game baþarýsýz - Fail cutscene oynat ve restart
     /// </summary>
     public void OnQTEFail()
     {
@@ -76,10 +73,7 @@ public class LevelManager : MonoBehaviour
 
     private void OnSuccessCutsceneEnd()
     {
-        // Oyuncu kontrolü geri ver
-        PlayerController player = FindFirstObjectByType<PlayerController>();
-        player?.EnableMovement();
-
+        EnablePlayerMovement();
         isTransitioning = false;
     }
 
@@ -88,16 +82,12 @@ public class LevelManager : MonoBehaviour
     /// </summary>
     public void RestartLevel()
     {
-        // Inventory temizle
-        PlayerInteraction playerInteraction = FindFirstObjectByType<PlayerInteraction>();
-        playerInteraction?.ClearInventory();
-
-        // Sahneyi yeniden yükle
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        ClearPlayerInventory();
+        ReloadCurrentScene();
     }
 
     /// <summary>
-    /// Bir sonraki level'a geç
+    /// Sonraki level'a geç
     /// </summary>
     public void LoadNextLevel()
     {
@@ -105,9 +95,28 @@ public class LevelManager : MonoBehaviour
         {
             SceneManager.LoadScene(nextLevelName);
         }
-        else
+    }
+
+    private void EnablePlayerMovement()
+    {
+        FindFirstObjectByType<PlayerController>()?.EnableMovement();
+    }
+
+    private void ClearPlayerInventory()
+    {
+        FindFirstObjectByType<PlayerInteraction>()?.ClearInventory();
+    }
+
+    private void ReloadCurrentScene()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
         {
-            Debug.LogWarning("LevelManager: Next level name is not set!");
+            Instance = null;
         }
     }
-}   
+}

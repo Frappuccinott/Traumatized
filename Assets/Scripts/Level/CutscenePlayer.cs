@@ -2,115 +2,62 @@ using UnityEngine;
 using UnityEngine.Video;
 using System;
 
+/// <summary>
+/// MP4 video cutscene oynatýcý
+/// Video bitince callback çaðrýlýr
+/// </summary>
 public class CutscenePlayer : MonoBehaviour
 {
     [Header("Video Settings")]
     [SerializeField] private VideoPlayer videoPlayer;
-    [SerializeField] private GameObject cutsceneCanvas;
+    [SerializeField] private GameObject videoPanel;
 
-    [Header("Skip Settings")]
-    [SerializeField] private bool canSkip = false;
-    [SerializeField] private float skipDelay = 1f;
-
-    private Action onCutsceneEndCallback;
-    private bool isPlaying = false;
-    private float skipTimer = 0f;
+    private Action onVideoEndCallback;
 
     private void Awake()
     {
-        if (videoPlayer == null)
-        {
-            videoPlayer = GetComponent<VideoPlayer>();
-        }
-
-        if (cutsceneCanvas != null)
-        {
-            cutsceneCanvas.SetActive(false);
-        }
-
         if (videoPlayer != null)
         {
             videoPlayer.loopPointReached += OnVideoEnd;
         }
-    }
 
-    private void Update()
-    {
-        if (!isPlaying) return;
-
-        if (canSkip)
+        if (videoPanel != null)
         {
-            skipTimer += Time.deltaTime;
-
-            // Skip için input kontrolü
-            if (skipTimer >= skipDelay)
-            {
-                if (Input.anyKeyDown || (UnityEngine.InputSystem.Gamepad.current != null &&
-                    UnityEngine.InputSystem.Gamepad.current.buttonSouth.wasPressedThisFrame))
-                {
-                    SkipCutscene();
-                }
-            }
+            videoPanel.SetActive(false);
         }
     }
 
+    /// <summary>
+    /// Video oynat ve bitince callback çaðýr
+    /// </summary>
     public void PlayCutscene(Action onEnd)
     {
-        if (videoPlayer == null)
+        onVideoEndCallback = onEnd;
+
+        if (videoPanel != null)
         {
-            Debug.LogWarning("VideoPlayer is not assigned!");
-            onEnd?.Invoke();
-            return;
+            videoPanel.SetActive(true);
         }
 
-        onCutsceneEndCallback = onEnd;
-        isPlaying = true;
-        skipTimer = 0f;
-
-        // Canvas'ý aç
-        if (cutsceneCanvas != null)
+        if (videoPlayer != null)
         {
-            cutsceneCanvas.SetActive(true);
+            videoPlayer.Stop();
+            videoPlayer.Play();
         }
-
-        // Oyuncu hareketini durdur
-        PlayerController player = FindFirstObjectByType<PlayerController>();
-        if (player != null)
+        else
         {
-            player.DisableMovement();
+            OnVideoEnd(null);
         }
-
-        // Video oynat
-        videoPlayer.Play();
     }
 
     private void OnVideoEnd(VideoPlayer vp)
     {
-        EndCutscene();
-    }
-
-    private void SkipCutscene()
-    {
-        if (videoPlayer != null && videoPlayer.isPlaying)
+        if (videoPanel != null)
         {
-            videoPlayer.Stop();
-        }
-        EndCutscene();
-    }
-
-    private void EndCutscene()
-    {
-        isPlaying = false;
-
-        // Canvas'ý kapat
-        if (cutsceneCanvas != null)
-        {
-            cutsceneCanvas.SetActive(false);
+            videoPanel.SetActive(false);
         }
 
-        // Callback çaðýr
-        onCutsceneEndCallback?.Invoke();
-        onCutsceneEndCallback = null;
+        onVideoEndCallback?.Invoke();
     }
 
     private void OnDestroy()

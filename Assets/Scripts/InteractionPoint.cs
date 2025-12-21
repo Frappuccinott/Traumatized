@@ -1,8 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Etkileþim noktasý - Item kullanýlacak yerler
-/// Örn: Adam (tabanca hedefi), Su kabý (zehir hedefi), vb.
+/// Etkileþim noktasý - Her level'da farklý kill animation
 /// </summary>
 [RequireComponent(typeof(ItemOutline))]
 public class InteractionPoint : MonoBehaviour
@@ -10,7 +9,11 @@ public class InteractionPoint : MonoBehaviour
     [Header("Interaction Settings")]
     [SerializeField] private string pointID = "Target_01";
     [SerializeField] private ItemType requiredItem = ItemType.Gun;
-    [SerializeField] private bool requiresItem = true; // Level 5 için false
+    [SerializeField] private bool requiresItem = true;
+
+    [Header("Kill Animation")]
+    [SerializeField] private CutscenePlayer killAnimation; // Level'a özel
+    [SerializeField] private EnemyController enemyController; // Bu enemy
 
     private ItemOutline outlineEffect;
     private bool canInteract = true;
@@ -29,56 +32,44 @@ public class InteractionPoint : MonoBehaviour
         outlineEffect?.SetOutline(active);
     }
 
-    /// <summary>
-    /// Etkileþim noktasýna týklandýðýnda
-    /// </summary>
     public void Interact(ItemType playerItem)
     {
         if (!canInteract) return;
-
-        // Item gerekiyor mu?
-        if (requiresItem)
-        {
-            // Doðru item'a sahip mi?
-            if (playerItem != requiredItem)
-            {
-                Debug.LogWarning($"Wrong item! Need: {requiredItem}, Have: {playerItem}");
-                return;
-            }
-        }
+        if (!ValidateItem(playerItem)) return;
 
         canInteract = false;
-
-        // Mini game baþlat
         StartMiniGame();
+    }
+
+    private bool ValidateItem(ItemType playerItem)
+    {
+        if (!requiresItem) return true;
+        return playerItem == requiredItem;
     }
 
     private void StartMiniGame()
     {
-        if (MiniGameBarManager.Instance != null)
-        {
-            MiniGameBarManager.Instance.StartMiniGame(requiredItem, OnMiniGameSuccess, OnMiniGameFail);
-        }
+        MiniGameBarManager.Instance?.StartMiniGame(
+            requiredItem,
+            OnMiniGameSuccess,
+            OnMiniGameFail,
+            killAnimation,
+            enemyController
+        );
     }
 
     private void OnMiniGameSuccess()
     {
-        Debug.Log($"SUCCESS: {requiredItem} used at {pointID}");
-
-        // TODO: Animasyon/Cutscene
-        // Item'ý kullan
-        PlayerInteraction player = FindFirstObjectByType<PlayerInteraction>();
-        player?.UseItem();
-
-        // Level geçiþi veya devam
-        // LevelManager.Instance?.OnQTESuccess();
+        UsePlayerItem();
     }
 
     private void OnMiniGameFail()
     {
-        Debug.Log($"FAIL: {requiredItem} at {pointID}");
+        // MiniGameBarManager zaten handle ediyor
+    }
 
-        // TODO: Fail durumu
-        // LevelManager.Instance?.OnQTEFail();
+    private void UsePlayerItem()
+    {
+        FindFirstObjectByType<PlayerInteraction>()?.UseItem();
     }
 }

@@ -5,7 +5,10 @@ using UnityEngine.InputSystem;
 using UnityEngine.Video;
 using UnityEngine.SceneManagement;
 
-
+/// <summary>
+/// Bar mini game - Success → Kill animation → Enemy die → Steady hand
+/// Fail → Red screen → Reload
+/// </summary>
 public class MiniGameBarManager : MonoBehaviour
 {
     public static MiniGameBarManager Instance { get; private set; }
@@ -24,26 +27,27 @@ public class MiniGameBarManager : MonoBehaviour
     [SerializeField] private AudioClip successSound;
     [SerializeField] private AudioClip failSound;
 
-    [Header("Transition Video")]
-    [SerializeField] private GameObject videoPanel;
-    [SerializeField] private VideoPlayer transitionVideo;
-
     [Header("Next MiniGame")]
     [SerializeField] private SteadyHandPanel steadyHandPanel;
 
     private InputAction confirmAction;
     private AudioSource audioSource;
-
     private float barWidth;
     private float sliderPosition;
     private bool isGameActive;
     private bool hasPressedButton;
-
-    private Action onSuccessCallback;
-    private Action onFailCallback;
     private ItemType currentItemType;
+    private CutscenePlayer currentKillAnimation;
+    private EnemyController currentEnemy;
 
     private void Awake()
+    {
+        InitializeSingleton();
+        InitializeAudio();
+        InitializeInput();
+    }
+
+    private void InitializeSingleton()
     {
         if (Instance != null && Instance != this)
         {
@@ -51,9 +55,15 @@ public class MiniGameBarManager : MonoBehaviour
             return;
         }
         Instance = this;
+    }
 
+    private void InitializeAudio()
+    {
         audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+    }
 
+    private void InitializeInput()
+    {
         confirmAction = new InputAction("MiniGameConfirm", InputActionType.Button);
         confirmAction.AddBinding("<Keyboard>/e");
         confirmAction.AddBinding("<Gamepad>/buttonWest");
@@ -72,61 +82,65 @@ public class MiniGameBarManager : MonoBehaviour
     private void Start()
     {
         miniGamePanel?.SetActive(false);
-        videoPanel?.SetActive(false);
 
         if (barBackground != null)
+        {
             barWidth = barBackground.rect.width;
-
-        if (transitionVideo != null)
-            transitionVideo.loopPointReached += OnTransitionVideoFinished;
+        }
     }
 
     private void Update()
     {
         if (!isGameActive) return;
 
-        MoveSlider();
+        UpdateSlider();
         CheckInput();
     }
 
-    // ================= START =================
-    public void StartMiniGame(ItemType itemType, Action onSuccess, Action onFail)
+    public void StartMiniGame(
+        ItemType itemType,
+        Action onSuccess,
+        Action onFail,
+        CutscenePlayer killAnimation,
+        EnemyController enemy)
     {
         currentItemType = itemType;
-        onSuccessCallback = onSuccess;
-        onFailCallback = onFail;
+        currentKillAnimation = killAnimation;
+        currentEnemy = enemy;
 
         miniGamePanel?.SetActive(true);
-
-        PlayerController player = FindFirstObjectByType<PlayerController>();
-        player?.DisableMovement();
-
-        sliderPosition = 0f;
-        hasPressedButton = false;
-        isGameActive = true;
-
-        if (slider != null)
-            slider.anchoredPosition = new Vector2(0f, slider.anchoredPosition.y);
-
+        DisablePlayerMovement();
+        ResetGameState();
         UpdateInstructionText();
 
         confirmAction.Disable();
         confirmAction.Enable();
     }
 
-    // ================= BAR LOGIC =================
-    private void MoveSlider()
+    private void ResetGameState()
+    {
+        sliderPosition = 0f;
+        hasPressedButton = false;
+        isGameActive = true;
+
+        if (slider != null)
+        {
+            slider.anchoredPosition = new Vector2(0f, slider.anchoredPosition.y);
+        }
+    }
+
+    private void UpdateSlider()
     {
         sliderPosition += sliderSpeed * Time.deltaTime;
-
         float xPos = Mathf.Min(sliderPosition, barWidth);
 
         if (slider != null)
+        {
             slider.anchoredPosition = new Vector2(xPos, slider.anchoredPosition.y);
+        }
 
         if (sliderPosition >= barWidth && !hasPressedButton)
         {
-            Debug.Log("<color=red>[MINIGAME FAIL]</color> No input");
             OnFail();
         }
     }
@@ -140,9 +154,13 @@ public class MiniGameBarManager : MonoBehaviour
             hasPressedButton = true;
 
             if (IsInGreenZone())
+            {
                 OnSuccess();
+            }
             else
+            {
                 OnFail();
+            }
         }
     }
 
@@ -157,77 +175,84 @@ public class MiniGameBarManager : MonoBehaviour
                sliderPosition <= greenCenterX + greenHalfWidth;
     }
 
-    // ================= RESULT =================
     private void OnSuccess()
     {
-        Debug.Log($"<color=green>[BAR MINIGAME SUCCESS]</color> Item: {currentItemType}");
-
-        if (successSound != null)
-            audioSource.PlayOneShot(successSound);
-
+        PlaySound(successSound);
         EndMiniGame();
-        PlayTransitionVideo();
+        PlayKillAnimation();
     }
 
     private void OnFail()
     {
-        if (failSound != null)
-            audioSource.PlayOneShot(failSound);
-
+        PlaySound(failSound);
         EndMiniGame();
-
-        Debug.Log("<color=red>[BAR MINIGAME FAIL]</color> Reloading scene");
-
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        ShowRedScreenAndReload();
     }
-
 
     private void EndMiniGame()
     {
         isGameActive = false;
         miniGamePanel?.SetActive(false);
-
-        PlayerController player = FindFirstObjectByType<PlayerController>();
-        player?.EnableMovement();
     }
 
-    // ================= VIDEO =================
-    private void PlayTransitionVideo()
+    private void PlayKillAnimation()
     {
-        if (transitionVideo == null || videoPanel == null)
+        if (currentKillAnimation != null)
         {
-            Debug.Log("No transition video → SteadyHand starts");
-            steadyHandPanel?.Show();
-            return;
+            currentKillAnimation.PlayCutscene(OnKillAnimationEnd);
         }
-
-        videoPanel.SetActive(true);
-        transitionVideo.Stop();
-        transitionVideo.Play();
+        else
+        {
+            OnKillAnimationEnd();
+        }
     }
 
-    private void OnTransitionVideoFinished(VideoPlayer vp)
+    private void OnKillAnimationEnd()
     {
-        videoPanel.SetActive(false);
+        // Enemy'yi death pozisyon/rotation'a ayarla
+        currentEnemy?.SetDeathTransform();
 
-        Debug.Log("<color=cyan>[TRANSITION VIDEO FINISHED]</color>");
-
+        // Steady Hand oyunu başlat
         steadyHandPanel?.Show();
+    }
+
+    private void ShowRedScreenAndReload()
+    {
+        RedScreenEffect.Instance?.ShowRedScreen();
+        Invoke(nameof(ReloadScene), 1f);
     }
 
     private void UpdateInstructionText()
     {
         if (instructionText != null)
-            instructionText.text =
-                $"Press X when the line is in the green zone ({currentItemType})!";
+        {
+            instructionText.text = $"Press X when the line is in the green zone ({currentItemType})!";
+        }
+    }
+
+    private void PlaySound(AudioClip clip)
+    {
+        if (clip != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
+    }
+
+    private void DisablePlayerMovement()
+    {
+        FindFirstObjectByType<PlayerController>()?.DisableMovement();
+    }
+
+    private void ReloadScene()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     private void OnDestroy()
     {
         if (Instance == this)
+        {
             Instance = null;
-
-        if (transitionVideo != null)
-            transitionVideo.loopPointReached -= OnTransitionVideoFinished;
+        }
     }
 }

@@ -1,9 +1,11 @@
 ﻿using System;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Steady Hand - Success → Panel kapat, Fail → Red screen + reload
+/// </summary>
 public class SteadyHandMiniGame : MonoBehaviour
 {
     [Header("UI References")]
@@ -16,16 +18,15 @@ public class SteadyHandMiniGame : MonoBehaviour
     [Header("Vibration & Noise")]
     [Range(0f, 1f)]
     [SerializeField] private float vibrationStrength = 1.0f;
-    [SerializeField] private float noiseStrength = 400f; // ⬅️ ÇOK GÜÇLÜ
+    [SerializeField] private float noiseStrength = 400f;
 
     [Header("Player Control")]
-    [SerializeField] private float stickControlSpeed = 250f; // ⬅️ Güçlü kontrol gerekir
+    [SerializeField] private float stickControlSpeed = 250f;
 
     public event Action OnSuccess;
 
     private PlayerInputActions inputActions;
     private Vector2 moveInput;
-
     private Vector2 offset;
     private float timer;
     private bool isPlaying;
@@ -75,15 +76,12 @@ public class SteadyHandMiniGame : MonoBehaviour
         {
             gamepad.SetMotorSpeeds(vibrationStrength, vibrationStrength);
         }
-
-        Debug.Log("<color=cyan>[STEADY HAND] Dot çıkmaya çalışıyor - İçeride tut!</color>");
     }
 
     public void StopGame()
     {
         isPlaying = false;
-        Time.timeScale = 1f;
-        StopVibration();
+        ResetGameState();
     }
 
     private void Update()
@@ -91,7 +89,6 @@ public class SteadyHandMiniGame : MonoBehaviour
         if (!isPlaying) return;
 
         float deltaTime = Time.unscaledDeltaTime;
-
         timer += deltaTime;
 
         if (timer >= gameDuration)
@@ -100,22 +97,23 @@ public class SteadyHandMiniGame : MonoBehaviour
             return;
         }
 
-        // 1. GÜÇLÜ RASTGELE İTME - Dot çıkmaya çalışır
-        Vector2 pushDirection = UnityEngine.Random.insideUnitCircle.normalized; // Rastgele yön
+        UpdateDotPosition(deltaTime);
+        CheckFail();
+    }
+
+    private void UpdateDotPosition(float deltaTime)
+    {
+        Vector2 pushDirection = UnityEngine.Random.insideUnitCircle.normalized;
         Vector2 pushForce = pushDirection * noiseStrength * deltaTime;
         offset += pushForce;
 
-        // 2. PLAYER KONTROL - Dot'u geri çek
         Vector2 playerControl = new Vector2(-moveInput.x, moveInput.y) * stickControlSpeed * deltaTime;
         offset += playerControl;
 
-        // Dot pozisyonu
         if (dot != null)
         {
             dot.anchoredPosition = offset;
         }
-
-        CheckFail();
     }
 
     private void CheckFail()
@@ -135,29 +133,30 @@ public class SteadyHandMiniGame : MonoBehaviour
     private void Success()
     {
         isPlaying = false;
-        StopVibration();
-        Time.timeScale = 1f;
-
-        Debug.Log("<color=green>[STEADY HAND SUCCESS]</color> 5 saniye içeride tuttun!");
-
+        ResetGameState();
         OnSuccess?.Invoke();
     }
 
     private void Fail()
     {
         isPlaying = false;
-
-        Debug.Log("<color=red>[STEADY HAND FAIL]</color> Dot çemberden çıktı!");
-
-        if (gamepad != null)
-        {
-            gamepad.SetMotorSpeeds(0f, 0f);
-            gamepad.ResetHaptics();
-        }
+        StopVibration();
 
         Time.timeScale = 1f;
 
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        ShowRedScreenAndReload();
+    }
+
+    private void ShowRedScreenAndReload()
+    {
+        RedScreenEffect.Instance?.ShowRedScreen();
+        Invoke(nameof(ReloadScene), 1f); // 1 saniye sonra reload
+    }
+
+    private void ResetGameState()
+    {
+        StopVibration();
+        Time.timeScale = 1f;
     }
 
     private void StopVibration()
@@ -167,6 +166,11 @@ public class SteadyHandMiniGame : MonoBehaviour
             gamepad.SetMotorSpeeds(0f, 0f);
             gamepad.ResetHaptics();
         }
+    }
+
+    private void ReloadScene()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     private void OnDestroy()

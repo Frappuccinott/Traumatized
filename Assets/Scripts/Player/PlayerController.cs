@@ -2,9 +2,8 @@
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Karakter hareket kontrolü - WASD/Sol Stick ile hareket, Space/A ile zıplama
-/// Character Controller kullanır, 2.5D platformer tarzı hareket
-/// SADECE YATAY HAREKET (Sağ-Sol)
+/// Karakter hareket kontrolü - Sadece yatay (sağ-sol) hareket
+/// WASD/Sol Stick ile hareket, Space/A ile zıplama
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
@@ -91,17 +90,13 @@ public class PlayerController : MonoBehaviour
     {
         if (mainCamera == null) return;
 
-        // SADECE X EKSENİ (Sağ-Sol)
-        // moveInput.x → A/D veya Left Stick yatay
         Vector3 right = mainCamera.transform.right;
         right.y = 0;
         right.Normalize();
 
         Vector3 moveDirection = right * moveInput.x;
-
         controller.Move(moveDirection * moveSpeed * Time.deltaTime);
 
-        // Hareket varsa karakteri o yöne döndür
         if (Mathf.Abs(moveInput.x) > 0.01f)
         {
             Vector3 lookDirection = moveInput.x > 0 ? right : -right;
@@ -116,12 +111,18 @@ public class PlayerController : MonoBehaviour
         controller.Move(velocity * Time.deltaTime);
     }
 
+    /// <summary>
+    /// Hareketi devre dışı bırak (mini game sırasında)
+    /// </summary>
     public void DisableMovement()
     {
         CanMove = false;
         moveInput = Vector2.zero;
     }
 
+    /// <summary>
+    /// Hareketi aktif et
+    /// </summary>
     public void EnableMovement()
     {
         CanMove = true;

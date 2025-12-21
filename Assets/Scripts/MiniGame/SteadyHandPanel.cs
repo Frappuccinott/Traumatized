@@ -1,16 +1,13 @@
-﻿using UnityEngine;
+﻿using NUnit.Framework;
+using UnityEngine;
 
 /// <summary>
-/// Steady Hand mini game panel yönetimi
-/// Success olunca otomatik kapanır
+/// Steady Hand panel - Success → Player hareket edebilir, panel kapanır
 /// </summary>
 public class SteadyHandPanel : MonoBehaviour
 {
     [SerializeField] private SteadyHandMiniGame miniGame;
 
-    /// <summary>
-    /// Panel'i aç ve mini game'i başlat
-    /// </summary>
     public void Show()
     {
         gameObject.SetActive(true);
@@ -22,9 +19,6 @@ public class SteadyHandPanel : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Panel'i kapat
-    /// </summary>
     public void Hide()
     {
         UnsubscribeEvent();
@@ -33,7 +27,16 @@ public class SteadyHandPanel : MonoBehaviour
 
     private void OnMiniGameSuccess()
     {
+        // Player hareket edebilir
+        EnablePlayerMovement();
+
+        // Panel kapat
         Hide();
+    }
+
+    private void EnablePlayerMovement()
+    {
+        FindFirstObjectByType<PlayerController>()?.EnableMovement();
     }
 
     private void UnsubscribeEvent()

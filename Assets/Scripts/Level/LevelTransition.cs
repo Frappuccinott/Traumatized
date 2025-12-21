@@ -1,78 +1,31 @@
 using UnityEngine;
 
-public class LevelTransition : MonoBehaviour
+/// <summary>
+/// Level geçiþ trigger'ý - Oyuncu collider'a girince sonraki level'a geç
+/// </summary>
+public class LevelTransitionTrigger : MonoBehaviour
 {
-    [Header("Transition Settings")]
-    [SerializeField] private Transform exitPoint;
-    [SerializeField] private float transitionDistance = 2f;
-    [SerializeField] private bool isLevelExit = true;
+    [Header("Next Level")]
+    [SerializeField] private string nextLevelName = "Level2";
 
-    [Header("Visual")]
-    [SerializeField] private GameObject transitionPrompt;
+    private bool hasTriggered = false;
 
-    private Transform playerTransform;
-    private bool playerInRange = false;
-    private bool hasTransitioned = false;
-
-    private void Start()
+    private void OnTriggerEnter(Collider other)
     {
-        playerTransform = FindFirstObjectByType<PlayerController>()?.transform;
+        if (hasTriggered) return;
 
-        if (transitionPrompt != null)
+        if (other.CompareTag("Player"))
         {
-            transitionPrompt.SetActive(false);
+            hasTriggered = true;
+            LoadNextLevel();
         }
     }
 
-    private void Update()
+    private void LoadNextLevel()
     {
-        if (hasTransitioned || playerTransform == null) return;
-
-        Vector3 checkPoint = exitPoint != null ? exitPoint.position : transform.position;
-        float distance = Vector3.Distance(checkPoint, playerTransform.position);
-        bool inRange = distance <= transitionDistance;
-
-        if (inRange != playerInRange)
+        if (!string.IsNullOrEmpty(nextLevelName))
         {
-            playerInRange = inRange;
-
-            if (transitionPrompt != null)
-            {
-                transitionPrompt.SetActive(playerInRange);
-            }
-
-            if (playerInRange && isLevelExit)
-            {
-                TriggerTransition();
-            }
+            UnityEngine.SceneManagement.SceneManager.LoadScene(nextLevelName);
         }
-    }
-
-    private void TriggerTransition()
-    {
-        if (hasTransitioned) return;
-        hasTransitioned = true;
-
-        if (transitionPrompt != null)
-        {
-            transitionPrompt.SetActive(false);
-        }
-
-        // Sonraki level'a geç
-        if (LevelManager.Instance != null)
-        {
-            LevelManager.Instance.LoadNextLevel();
-        }
-        else
-        {
-            Debug.LogWarning("LevelManager not found!");
-        }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Vector3 checkPoint = exitPoint != null ? exitPoint.position : transform.position;
-        Gizmos.color = isLevelExit ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(checkPoint, transitionDistance);
     }
 }
