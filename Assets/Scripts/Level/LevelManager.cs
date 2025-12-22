@@ -2,8 +2,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Level yönetimi - Sahne geçiþleri ve cutscene oynatma
-/// Singleton pattern ile global eriþim
+/// Level yönetimi - Sahne geçiþleri
+/// Steady Hand baþarýlý olmadan sonraki level'a geçemez
 /// </summary>
 public class LevelManager : MonoBehaviour
 {
@@ -12,11 +12,7 @@ public class LevelManager : MonoBehaviour
     [Header("Level Settings")]
     [SerializeField] private string nextLevelName;
 
-    [Header("Cutscene Settings")]
-    [SerializeField] private CutscenePlayer successCutscene;
-    [SerializeField] private CutscenePlayer failCutscene;
-
-    private bool isTransitioning;
+    private bool canProgressToNextLevel = false;
 
     private void Awake()
     {
@@ -34,48 +30,17 @@ public class LevelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Mini game baþarýlý - Success cutscene oynat
+    /// Steady Hand baþarýlý - Level geçiþine izin ver
     /// </summary>
-    public void OnQTESuccess()
+    public void UnlockLevelProgression()
     {
-        if (isTransitioning) return;
-
-        isTransitioning = true;
-
-        if (successCutscene != null)
-        {
-            successCutscene.PlayCutscene(OnSuccessCutsceneEnd);
-        }
-        else
-        {
-            OnSuccessCutsceneEnd();
-        }
+        canProgressToNextLevel = true;
     }
 
     /// <summary>
-    /// Mini game baþarýsýz - Fail cutscene oynat ve restart
+    /// Level geçiþi yapýlabilir mi?
     /// </summary>
-    public void OnQTEFail()
-    {
-        if (isTransitioning) return;
-
-        isTransitioning = true;
-
-        if (failCutscene != null)
-        {
-            failCutscene.PlayCutscene(RestartLevel);
-        }
-        else
-        {
-            RestartLevel();
-        }
-    }
-
-    private void OnSuccessCutsceneEnd()
-    {
-        EnablePlayerMovement();
-        isTransitioning = false;
-    }
+    public bool CanProgressToNextLevel() => canProgressToNextLevel;
 
     /// <summary>
     /// Mevcut sahneyi yeniden yükle
@@ -87,19 +52,19 @@ public class LevelManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Sonraki level'a geç
+    /// Sonraki level'a geç (sadece unlock olduysa)
     /// </summary>
     public void LoadNextLevel()
     {
+        if (!canProgressToNextLevel)
+        {
+            return;
+        }
+
         if (!string.IsNullOrEmpty(nextLevelName))
         {
             SceneManager.LoadScene(nextLevelName);
         }
-    }
-
-    private void EnablePlayerMovement()
-    {
-        FindFirstObjectByType<PlayerController>()?.EnableMovement();
     }
 
     private void ClearPlayerInventory()

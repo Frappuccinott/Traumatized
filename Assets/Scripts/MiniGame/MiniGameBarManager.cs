@@ -1,8 +1,6 @@
 ﻿using System;
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Video;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -18,7 +16,6 @@ public class MiniGameBarManager : MonoBehaviour
     [SerializeField] private RectTransform slider;
     [SerializeField] private RectTransform barBackground;
     [SerializeField] private RectTransform greenZone;
-    [SerializeField] private TMP_Text instructionText;
 
     [Header("Game Settings")]
     [SerializeField] private float sliderSpeed = 300f;
@@ -111,7 +108,6 @@ public class MiniGameBarManager : MonoBehaviour
         miniGamePanel?.SetActive(true);
         DisablePlayerMovement();
         ResetGameState();
-        UpdateInstructionText();
 
         confirmAction.Disable();
         confirmAction.Enable();
@@ -209,10 +205,7 @@ public class MiniGameBarManager : MonoBehaviour
 
     private void OnKillAnimationEnd()
     {
-        // Enemy'yi death pozisyon/rotation'a ayarla
         currentEnemy?.SetDeathTransform();
-
-        // Steady Hand oyunu başlat
         steadyHandPanel?.Show();
     }
 
@@ -220,14 +213,6 @@ public class MiniGameBarManager : MonoBehaviour
     {
         RedScreenEffect.Instance?.ShowRedScreen();
         Invoke(nameof(ReloadScene), 1f);
-    }
-
-    private void UpdateInstructionText()
-    {
-        if (instructionText != null)
-        {
-            instructionText.text = $"Press X when the line is in the green zone ({currentItemType})!";
-        }
     }
 
     private void PlaySound(AudioClip clip)

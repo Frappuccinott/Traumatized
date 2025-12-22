@@ -1,8 +1,7 @@
-﻿using NUnit.Framework;
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
-/// Steady Hand panel - Success → Player hareket edebilir, panel kapanır
+/// Steady Hand panel - Success → Level geçişini unlock et
 /// </summary>
 public class SteadyHandPanel : MonoBehaviour
 {
@@ -27,11 +26,22 @@ public class SteadyHandPanel : MonoBehaviour
 
     private void OnMiniGameSuccess()
     {
+        // Level geçişini unlock et
+        UnlockLevelProgression();
+
         // Player hareket edebilir
         EnablePlayerMovement();
 
         // Panel kapat
         Hide();
+    }
+
+    private void UnlockLevelProgression()
+    {
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.UnlockLevelProgression();
+        }
     }
 
     private void EnablePlayerMovement()
