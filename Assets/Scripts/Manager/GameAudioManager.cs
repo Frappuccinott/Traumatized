@@ -1,11 +1,10 @@
 using UnityEngine;
 using UnityEngine.Audio;
-using UnityEngine.SceneManagement;
 using System.Collections;
 
 public class GameAudioManager : MonoBehaviour
 {
-    public static GameAudioManager Instance { get; private set; }
+    public static GameAudioManager Instance;
 
     [Header("Mixer")]
     [SerializeField] private AudioMixer mixer;
@@ -13,15 +12,14 @@ public class GameAudioManager : MonoBehaviour
     [SerializeField] private AudioMixerGroup sfxGroup;
 
     [Header("Music")]
-    [SerializeField] private AudioClip[] musicClips;
+    [SerializeField] private AudioClip loopMusic;
 
-    [Header("UI SFX")]
-    [SerializeField] private AudioClip uiClickSound;
+    [Header("UI / SFX")]
+    [SerializeField] private AudioClip uiClick;
 
     private AudioSource musicSource;
     private AudioSource sfxSource;
-    private Coroutine musicRoutine;
-    private int currentMusicIndex = 0;
+    private Coroutine miniGameFadeRoutine;
 
     private const string MUSIC_PARAM = "Music";
     private const string SFX_PARAM = "SFX";
@@ -31,90 +29,117 @@ public class GameAudioManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
         Instance = this;
-        CreateSources();
         DontDestroyOnLoad(gameObject);
-    }
 
-    private void OnEnable() => SceneManager.sceneLoaded += OnSceneLoaded;
-    private void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
-    private void Start() => LoadAudioSettings();
-
-    private void OnDestroy()
-    {
-        if (musicRoutine != null) StopCoroutine(musicRoutine);
-        if (Instance == this) Instance = null;
-    }
-
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        if (scene.name != "AnaMenu") StartMusic();
+        CreateSources();
+        LoadVolumes();
+        StartMusic();
     }
 
     private void CreateSources()
     {
-        musicSource = CreateAudioSource(musicGroup, false);
-        sfxSource = CreateAudioSource(sfxGroup, false);
-    }
+        musicSource = gameObject.AddComponent<AudioSource>();
+        musicSource.outputAudioMixerGroup = musicGroup;
+        musicSource.loop = true;
+        musicSource.playOnAwake = false;
+        musicSource.ignoreListenerPause = true;
 
-    private AudioSource CreateAudioSource(AudioMixerGroup group, bool loop)
-    {
-        AudioSource source = gameObject.AddComponent<AudioSource>();
-        source.outputAudioMixerGroup = group;
-        source.playOnAwake = false;
-        source.loop = loop;
-        return source;
+        sfxSource = gameObject.AddComponent<AudioSource>();
+        sfxSource.outputAudioMixerGroup = sfxGroup;
+        sfxSource.playOnAwake = false;
+        sfxSource.ignoreListenerPause = true;
     }
 
     private void StartMusic()
     {
-        if (musicRoutine != null) StopCoroutine(musicRoutine);
-
-        if (musicClips == null || musicClips.Length == 0) return;
-
-        currentMusicIndex = 0;
-        musicRoutine = StartCoroutine(MusicRoutine());
+        if (loopMusic == null) return;
+        musicSource.clip = loopMusic;
+        musicSource.Play();
     }
 
-    private IEnumerator MusicRoutine()
+    public void PauseMusicForCutscene()
     {
-        while (true)
+        if (musicSource.isPlaying) musicSource.Pause();
+    }
+
+    public void ResumeMusicAfterCutscene()
+    {
+        if (!musicSource.isPlaying) musicSource.UnPause();
+    }
+
+    public void PlaySFX(AudioClip clip)
+    {
+        if (clip == null) return;
+        sfxSource.PlayOneShot(clip);
+    }
+
+    public void PlayUIClick()
+    {
+        PlaySFX(uiClick);
+    }
+
+    public void PlayMiniGameSFX(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        StopMiniGameFade();
+        sfxSource.clip = clip;
+        sfxSource.volume = 1f;
+        sfxSource.Play();
+    }
+
+    public void StopMiniGameSFX(float fadeDuration = 1f)
+    {
+        if (!sfxSource.isPlaying) return;
+
+        StopMiniGameFade();
+        miniGameFadeRoutine = StartCoroutine(FadeOutMiniGameSFX(fadeDuration));
+    }
+
+    private IEnumerator FadeOutMiniGameSFX(float duration)
+    {
+        float startVolume = sfxSource.volume;
+        float time = 0f;
+
+        while (time < duration)
         {
-            AudioClip clip = musicClips[currentMusicIndex];
+            time += Time.unscaledDeltaTime;
+            sfxSource.volume = Mathf.Lerp(startVolume, 0f, time / duration);
+            yield return null;
+        }
 
-            musicSource.clip = clip;
-            musicSource.Play();
+        sfxSource.Stop();
+        sfxSource.volume = startVolume;
+    }
 
-            yield return new WaitForSeconds(clip.length);
-
-            currentMusicIndex = (currentMusicIndex + 1) % musicClips.Length;
+    private void StopMiniGameFade()
+    {
+        if (miniGameFadeRoutine != null)
+        {
+            StopCoroutine(miniGameFadeRoutine);
+            miniGameFadeRoutine = null;
         }
     }
 
-    public void PlayUIClick() => PlaySFX(uiClickSound);
+    public void SetMusicVolume(float value) => SetMixer(MUSIC_PARAM, MUSIC_PREF, value);
 
-    private void PlaySFX(AudioClip clip)
+    public void SetSFXVolume(float value) => SetMixer(SFX_PARAM, SFX_PREF, value);
+
+    private void SetMixer(string param, string pref, float value)
     {
-        if (clip) sfxSource.PlayOneShot(clip);
-    }
-
-    public void SetMusicVolume(float volume) => SetVolume(MUSIC_PARAM, MUSIC_PREF, volume);
-    public void SetSFXVolume(float volume) => SetVolume(SFX_PARAM, SFX_PREF, volume);
-
-    private void SetVolume(string param, string pref, float volume)
-    {
-        float db = volume > 0 ? Mathf.Log10(volume) * 20f : -80f;
+        float db = value <= 0f ? -80f : Mathf.Log10(value) * 20f;
         mixer.SetFloat(param, db);
-        PlayerPrefs.SetFloat(pref, volume);
+        PlayerPrefs.SetFloat(pref, value);
     }
 
-    private void LoadAudioSettings()
+    private void LoadVolumes()
     {
         SetMusicVolume(PlayerPrefs.GetFloat(MUSIC_PREF, DEFAULT_VOLUME));
         SetSFXVolume(PlayerPrefs.GetFloat(SFX_PREF, DEFAULT_VOLUME));

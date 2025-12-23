@@ -47,5 +47,5 @@ MonoBehaviour:
   mixer: {fileID: 24100000, guid: 7bcbe5b51e4128845a581a405582e11f, type: 2}
   musicGroup: {fileID: -8006899782660383205, guid: 7bcbe5b51e4128845a581a405582e11f, type: 2}
   sfxGroup: {fileID: -149930661119777303, guid: 7bcbe5b51e4128845a581a405582e11f, type: 2}
-  musicClips: []
-  uiClickSound: {fileID: 8300000, guid: b0402b8dff6c66840a545b40e94c7e62, type: 3}
+  levelMusic: []
+  uiClick: {fileID: 8300000, guid: bb8066ea0413da64a9b1a116866600ee, type: 3}

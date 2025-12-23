@@ -50,3 +50,4 @@ MonoBehaviour:
   vibrationStrength: 1
   noiseStrength: 160
   stickControlSpeed: 150
+  miniGameSFX: {fileID: 8300000, guid: a8e31e2867b7cdf40a340aaa7b515f1b, type: 3}

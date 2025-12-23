@@ -836,7 +836,7 @@ MonoBehaviour:
   musicGroup: {fileID: -8006899782660383205, guid: 7bcbe5b51e4128845a581a405582e11f, type: 2}
   sfxGroup: {fileID: -149930661119777303, guid: 7bcbe5b51e4128845a581a405582e11f, type: 2}
   mainMenuMusic: {fileID: 8300000, guid: ef277bdc55d98c34db61dc091462885f, type: 3}
-  uiClickSound: {fileID: 8300000, guid: b0402b8dff6c66840a545b40e94c7e62, type: 3}
+  uiClickSound: {fileID: 8300000, guid: bb8066ea0413da64a9b1a116866600ee, type: 3}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -927,7 +927,7 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 853141856}
   m_Enabled: 1
-  m_VideoClip: {fileID: 32900000, guid: 5fe4a1ddfdf630c4f82deff8e62115d9, type: 3}
+  m_VideoClip: {fileID: 32900000, guid: 7cd07965c14b3ff4db0d4f7cb3293f63, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}

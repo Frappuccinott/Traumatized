@@ -59,7 +59,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.73333335}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -598,7 +598,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RedScreenEffect
   redOverlay: {fileID: 3825004245925713646}
   fadeInDuration: 0.5
-  redColor: {r: 1, g: 0, b: 0, a: 0.5}
+  redColor: {r: 1, g: 0, b: 0, a: 0.7058824}
 --- !u!1 &3521770613447657605
 GameObject:
   m_ObjectHideFlags: 0
@@ -1074,7 +1074,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 300, y: 300}
+  m_SizeDelta: {x: 330, y: 330}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8846823665995641539
 CanvasRenderer:
@@ -1152,7 +1152,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 300, y: 300}
+  m_SizeDelta: {x: 1920, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1911788235157313027
 CanvasRenderer:
@@ -1175,7 +1175,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_Color: {r: 1, g: 0, b: 0, a: 0.7058824}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1738,6 +1738,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2919281000475342143, guid: eeb6359ee8ad7fe4ebfe38f76cbf4b56, type: 3}
+      propertyPath: canvas
+      value: 
+      objectReference: {fileID: 4450681688334055798}
     - target: {fileID: 4972671668680131227, guid: eeb6359ee8ad7fe4ebfe38f76cbf4b56, type: 3}
       propertyPath: m_Name
       value: Cursor

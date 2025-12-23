@@ -56,8 +56,11 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (virtualCursor == null) return;
 
-        Vector2 screenPosition = virtualCursor.GetCursorPosition();
-        Ray ray = mainCamera.ScreenPointToRay(screenPosition);
+        //Vector2 screenPosition = virtualCursor.GetCursorPosition();
+        Vector2 cursorPos = virtualCursor.GetCursorScreenPosition();
+
+        //Ray ray = mainCamera.ScreenPointToRay(screenPosition);
+        Ray ray = mainCamera.ScreenPointToRay(cursorPos);
 
         if (Physics.Raycast(ray, out RaycastHit hit, raycastRange, interactableMask))
         {
@@ -173,11 +176,14 @@ public class PlayerInteraction : MonoBehaviour
 
     private void PlayPickupSound()
     {
-        if (pickupSound != null && audioSource != null)
+        if (pickupSound == null) return;
+
+        if (GameAudioManager.Instance != null)
         {
-            audioSource.PlayOneShot(pickupSound);
+            GameAudioManager.Instance.PlaySFX(pickupSound);
         }
     }
+
 
     private void UpdateHandModel(GameObject handModel)
     {

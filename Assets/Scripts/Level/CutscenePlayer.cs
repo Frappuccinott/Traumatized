@@ -1,11 +1,7 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.Video;
 using System;
 
-/// <summary>
-/// MP4 video cutscene oynatýcý
-/// Video bitince callback çaðrýlýr
-/// </summary>
 public class CutscenePlayer : MonoBehaviour
 {
     [Header("Video Settings")]
@@ -27,12 +23,15 @@ public class CutscenePlayer : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Video oynat ve bitince callback çaðýr
-    /// </summary>
     public void PlayCutscene(Action onEnd)
     {
         onVideoEndCallback = onEnd;
+
+        // ðŸ”‡ MÃ¼ziÄŸi duraklat
+        if (GameAudioManager.Instance != null)
+        {
+            GameAudioManager.Instance.PauseMusicForCutscene();
+        }
 
         if (videoPanel != null)
         {
@@ -55,6 +54,12 @@ public class CutscenePlayer : MonoBehaviour
         if (videoPanel != null)
         {
             videoPanel.SetActive(false);
+        }
+
+        // ðŸ”Š MÃ¼ziÄŸi devam ettir
+        if (GameAudioManager.Instance != null)
+        {
+            GameAudioManager.Instance.ResumeMusicAfterCutscene();
         }
 
         onVideoEndCallback?.Invoke();

@@ -100,7 +100,7 @@ MonoBehaviour:
     m_Bits: 1
   virtualCursor: {fileID: 0}
   handTransform: {fileID: 0}
-  pickupSound: {fileID: 0}
+  pickupSound: {fileID: 8300000, guid: 6c0005c85aa4dde4f8bc53390dfa0600, type: 3}
 --- !u!1 &4809962980757476876
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,8 +1,8 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Final sahne yöneticisi - Otomatik cutscene oynat, sonra ana menüye dön
+/// Final sahne yÃ¶neticisi - Otomatik cutscene oynat, sonra ana menÃ¼ye dÃ¶n
 /// </summary>
 public class FinalCutsceneManager : MonoBehaviour
 {
